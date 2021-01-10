@@ -1,0 +1,71 @@
+function sysCall_init()
+    --Obtengo los handle de los joints
+    joint_horizontal=sim.getObjectHandle('joint_horizontal')
+    joint_vertical=sim.getObjectHandle('joint_vertical')
+    joint_angular=sim.getObjectHandle('Revolute_joint')
+    --Obbtengo los handles de los cubos
+    peso1=sim.getObjectHandle('peso1')
+    peso2=sim.getObjectHandle('peso2')
+    peso3=sim.getObjectHandle('peso3')
+    --Obtengo los handles de los suction pads
+    gripper1=sim.getObjectHandle('suctionPad1')
+    gripper2=sim.getObjectHandle('suctionPad2')
+    gripper3=sim.getObjectHandle('suctionPad3')
+    --Obtengo los handles de los scripts de los suction pads
+    gripper_script1=sim.getScriptHandle('suctionPad1')
+    gripper_script2=sim.getScriptHandle('suctionPad2')
+    gripper_script3=sim.getScriptHandle('suctionPad3')
+    --Inicializo la velocidad vertical y la velocidad del joint que rota
+    velocidad_vertical=-0.14
+    velocidad_angulo=0 
+end
+
+function sysCall_actuation()
+    --Obtengo el parametro "active" de cada suction pad
+    local estado_gripper1=sim.getScriptSimulationParameter(gripper_script1,'active')
+    local estado_gripper2=sim.getScriptSimulationParameter(gripper_script2,'active')
+    local estado_gripper3=sim.getScriptSimulationParameter(gripper_script3,'active')
+    
+    
+    posicion_peso2=sim.getObjectPosition(peso2, -1)--obtengo posicion de la caja numero 2
+    angulo= sim.getJointPosition(joint_angular)--obtengo el angulo del joint que rota
+    
+    --obtengo la posicion de cada suction pad
+    altura1=sim.getObjectPosition(gripper1, -1)
+    altura2=sim.getObjectPosition(gripper2, -1)
+    altura3=sim.getObjectPosition(gripper3, -1)
+    
+    sim.setJointTargetVelocity(joint_angular,velocidad_angulo)--Le pongo velocidad al joint que rota
+    sim.setJointTargetVelocity(joint_vertical,velocidad_vertical)--Le pongo velocidad al joint vertical
+    --print("altuta1:", altura1)
+    --print("altuta2:", altura2)
+    --print("altuta3:", altura3)
+    --print("gripper1:", estado_gripper1)
+    --print("gripper2:", estado_gripper2)
+    --print("gripper3:", estado_gripper3)
+    --print(angulo)
+    
+    if (altura3[3]<0.117) then --a esa altura los suction pads llegan a los cubos
+        sim.setScriptSimulationParameter(gripper_script1,'active','true')--esto es medio bobada porque el chupito inicia activado de forma predeterminada
+        sim.setScriptSimulationParameter(gripper_script2,'active','true')
+        sim.setScriptSimulationParameter(gripper_script3,'active','true')
+        velocidad_vertical=0.2
+        velocidad_angulo=0.2
+    end
+    
+    if (posicion_peso2[3]>0.84) then 
+        velocidad_vertical=0
+    end
+    
+    if (angulo>=89*math.pi/180) then 
+        velocidad_angulo=0
+        velocidad_vertical=-0.05
+    end
+    
+    if (posicion_peso2[3]<0.8 and angulo>=89*math.pi/180) then
+        velocidad_vertical=0
+        sim.setScriptSimulationParameter(gripper_script1,'active','false')
+        sim.setScriptSimulationParameter(gripper_script2,'active','false')
+        sim.setScriptSimulationParameter(gripper_script3,'active','false')
+    end
+end
